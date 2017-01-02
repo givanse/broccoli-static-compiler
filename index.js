@@ -3,21 +3,26 @@ var path = require('path')
 var mkdirp = require('mkdirp')
 var helpers = require('broccoli-kitchen-sink-helpers')
 var symlinkOrCopySync = require('symlink-or-copy').sync
-var Writer = require('broccoli-writer')
+var Plugin = require('broccoli-plugin')
 
 module.exports = StaticCompiler
-StaticCompiler.prototype = Object.create(Writer.prototype)
+
+StaticCompiler.prototype = Object.create(Plugin.prototype)
 StaticCompiler.prototype.constructor = StaticCompiler
-function StaticCompiler (inputTree, options) {
-  if (!(this instanceof StaticCompiler)) return new StaticCompiler(inputTree, options)
-  this.inputTree = inputTree
-  this.options = options || {}
+function StaticCompiler(inputNodes, options) {
+  options = options || {};
+  Plugin.call(this, inputNodes, {
+    annotation: options.annotation
+  });
+  //if (!(this instanceof StaticCompiler)) return new StaticCompiler(inputNode, options)
+  //this.inputNode = inputNode
+  this.options = options
 }
 
 StaticCompiler.prototype.write = function (readTree, destDir) {
   var self = this
 
-  return readTree(this.inputTree).then(function (srcDir) {
+  return readTree(this.inputPaths).then(function (srcDir) {
     var sourcePath = path.join(srcDir, self.options.srcDir)
     var destPath   = path.join(destDir, self.options.destDir)
 
@@ -57,4 +62,11 @@ StaticCompiler.prototype._copy = function (sourcePath, destPath) {
     fs.rmdirSync(destPath);
   }
   symlinkOrCopySync(sourcePath, destPath)
+}
+
+StaticCompiler.prototype.build = function () {
+  console.log('> DEBUG');
+  console.log(this.inputPaths);
+  console.log(this.outputPath);
+  this.write(this.inputPaths, this.outputPath);
 }
